@@ -1,0 +1,29 @@
+{
+  "name": "first_bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon --exec ts-node src/index.ts",
+    "sample_register": "nodemon --exec ts-node scripts/register_user.ts",
+    "user_delete": "nodemon --exec ts-node scripts/register_user.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.3"
+  },
+  "dependencies": {
+    "@types/node-telegram-bot-api": "^0.61.6",
+    "axios": "^1.3.5",
+    "firebase-admin": "^11.6.0",
+    "node-telegram-bot-api": "^0.61.0",
+    "telegraf": "^4.12.2",
+    "telegraf-ts": "^3.89.1",
+    "telegram-bot-api": "^2.0.1"
+  }
+}
