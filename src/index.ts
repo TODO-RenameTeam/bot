@@ -6,6 +6,7 @@ import *  as https from 'https';
 import { TextCommand, Button } from './interfaces/TextCommand';
 import { listenToUpgates } from './endpoints';
 import { randomIntFromInterval } from './utils/random';
+import { RoleOnboarding, User, UserOnboarding } from './interfaces/onboarding';
 
 const bot = new TelegramBot(TELEGRAM_API_TOKEN, { polling: true });
 
@@ -162,6 +163,12 @@ let init = async () => {
     }, {
         command: '/info',
         description: 'Информация о пользователе',
+    }, {
+        command: '/question',
+        description: 'Задать вопрос',
+    }, {
+        command: '/onboarding',
+        description: 'Перейти к онбордигу',
     }]).catch((error) => {
         console.error('Error adding command suggestions:', error);
     });
@@ -175,27 +182,203 @@ bot.on('message', async (message: TelegramBot.Message) => {
     await axios.get(`${API_URL}/api/User/tg?id=${message.from.id}`, {
         httpsAgent: httpsAgent
     }).catch((err) => {
-        if (err.response.status == 404) {
-            if (message.text.length == 5) {
+        try {
+            if (err.response.status == 404) {
+                if (message.text.length == 5) {
 
-                axios.post(`${API_URL}/api/TelegramCode/connect?code=${message.text}&telegramUserId=${message.from.id}`, {}, {
-                    httpsAgent: httpsAgent
-                })
-                    .then((response) => {
-                        console.log('Response:', response.data);
-
-                        bot.sendMessage(message.chat.id, "Вы успешно вошли");
+                    axios.post(`${API_URL}/api/TelegramCode/connect?code=${message.text}&telegramUserId=${message.from.id}`, {}, {
+                        httpsAgent: httpsAgent
                     })
-                    .catch((error) => {
-                        bot.sendMessage(message.chat.id, "Код неверный либо вы прислали не код. Чтобы начать введите свой код.");
-                    });
+                        .then((response) => {
+                            console.log('Response:', response.data);
+
+                            bot.sendMessage(message.chat.id, "Вы успешно вошли");
+                        })
+                        .catch((error) => {
+                            bot.sendMessage(message.chat.id, "Код неверный либо вы прислали не код. Чтобы начать введите свой код.");
+                        });
+                }
+                else {
+                    bot.sendMessage(message.chat.id, "Чтобы начать введите свой код.");
+                }
             }
-            else {
-                bot.sendMessage(message.chat.id, "Чтобы начать введите свой код.");
-            }
+        } catch (error) {
+            console.log("hzerr");
+
         }
+
     });
 });
+
+
+bot.onText(/\/onboarding/, async (message) => {
+    await axios.get(`${API_URL}/api/User/tg?id=${message.from.id}`, {
+        httpsAgent: httpsAgent
+    }).then(async (result) => {
+        let user: User = result.data;
+
+        await axios.get(`${API_URL}/api/UserOnboarding/user/id/${user['id']}`, {
+            httpsAgent: httpsAgent
+        }).then(async (result) => {
+            let onbords: UserOnboarding[] = result.data;
+
+            if (onbords.length == 0) {
+                console.log('em');
+
+
+                await axios.get(`${API_URL}/api/RoleOnboarding/position/${user.positionID}`, {
+                    httpsAgent: httpsAgent
+                }).then(async (result) => {
+                    let roleOnb: RoleOnboarding = result.data;
+
+                    await axios.post(`${API_URL}/api/UserOnboarding`, {
+                        "userID": user.id,
+                        "roleOnboardingID": roleOnb.id,
+                        "userCurrentStepID": roleOnb.steps[0].id
+                    }, {
+                        httpsAgent: httpsAgent
+                    }).then(async (result) => {
+                        let roleOnb: RoleOnboarding = result.data;
+
+                        await axios.get(`${API_URL}/api/UserOnboarding/user/id/${user['id']}`, {
+                            httpsAgent: httpsAgent
+                        }).then(async (result) => {
+                            onbords = result.data;
+
+                            if (onbords.length != 0) {
+                                let onbord = onbords[0].roleOnboarding;
+
+                                let command = onbord.steps.find((step, i, c) => step.id == onbords[0].userCurrentStepID);
+
+                                for await (const image of command.images) {
+                                    if (image != "") {
+                                        await bot.sendPhoto(message.from.id, image)
+                                            .catch((error) => {
+                                                console.error('Error sending image');
+                                            });
+                                    }
+                                }
+
+                                for await (const link of command.urls) {
+                                    if (link != "")
+                                        await bot.sendMessage(message.from.id, link);
+                                }
+
+                                let tempQuizes = command.quizes.sort(() => Math.random() - 0.5).slice(0, Math.min(command.quizesCount, command.quizes.length));
+
+                                for (let index = 0; index < tempQuizes.length; index++) {
+
+                                    await bot.sendPoll(message.from.id, tempQuizes[index].text, tempQuizes[index].options,
+                                        {
+                                            type: 'quiz',
+                                            is_anonymous: false,
+                                            correct_option_id: tempQuizes[index].rightOptionID - 1
+                                        }
+                                    );
+
+                                }
+
+
+                                bot.sendMessage(message.from.id, command.text);
+                            }
+                        });
+                    }).catch((err) => { });
+                }).catch((err) => { });
+            } else {
+                await axios.get(`${API_URL}/api/RoleOnboarding/position/${user.positionID}`, {
+                    httpsAgent: httpsAgent
+                }).then(async (result) => {
+
+                    let onbord: RoleOnboarding = result.data;
+
+                    console.log(onbord);
+
+
+                    let command = onbord.steps.find((step, i, c) => step.id == onbords[0].userCurrentStepID);
+
+                    console.log(command);
+
+
+                    for await (const image of command.images) {
+                        if (image != "") {
+                            await bot.sendPhoto(message.from.id, image)
+                                .catch((error) => {
+                                    console.error('Error sending image');
+                                });
+                        }
+                    }
+
+                    for await (const link of command.urls) {
+                        if (link != "")
+                            await bot.sendMessage(message.from.id, link);
+                    }
+
+                    let tempQuizes = command.quizes.sort(() => Math.random() - 0.5).slice(0, Math.min(command.quizesCount, command.quizes.length));
+
+                    for (let index = 0; index < tempQuizes.length; index++) {
+
+                        await bot.sendPoll(message.from.id, tempQuizes[index].text, tempQuizes[index].options,
+                            {
+                                type: 'quiz',
+                                is_anonymous: false,
+                                correct_option_id: tempQuizes[index].rightOptionID - 1
+                            }
+                        );
+
+                    }
+
+
+                    bot.sendMessage(message.from.id, command.text);
+                });
+            }
+        }).catch((err) => { });
+    }).catch((err) => { });
+});
+
+
+
+bot.onText(/\/question/, async (message) => {
+    console.log(message.chat.id);
+
+
+
+    bot.sendMessage(message.chat.id, `Введите вопрос.`);
+
+
+    let callback = async (callbackMessage: TelegramBot.Message) => {
+        if (message.from.id == callbackMessage.chat.id) {
+            bot.sendMessage(callbackMessage.chat.id, `Вопрос отправлен.`);
+
+
+            bot.removeListener('message', callback);
+
+            await axios.get(`${API_URL}/api/User/tg?id=${message.from.id}`, {
+                httpsAgent: httpsAgent
+            }).then(async (result) => {
+                await axios.post(`${API_URL}/api/UserQuestion`, {
+                    "question": callbackMessage.text,
+                    "userQuestionID": result.data['id']
+                }, {
+                    httpsAgent: httpsAgent
+                }).then((result) => {
+                    console.log("sent");
+
+                }).catch((err) => {
+                    console.log(err);
+
+                });
+            }).catch((err) => {
+                console.log("c1");
+
+            });
+        }
+    };
+
+
+
+    bot.on('message', callback);
+});
+
 
 
 bot.onText(/\/info/, async (message) => {
@@ -218,30 +401,3 @@ bot.onText(/\/info/, async (message) => {
 });
 
 
-bot.onText(/\/poll/, async (message) => {
-    console.log(message.chat.id);
-
-
-
-    bot.sendPoll(message.from.id, 'Which is your favorite color?', ['Red', 'Green', 'Blue'],
-        {
-            type: 'quiz',
-            is_anonymous: false,
-            correct_option_id: 1
-        }
-    )
-        .then((sentPoll) => {
-            bot.on('poll_answer', (pollAnswer) => {
-
-                console.log(`User ${pollAnswer.user.id} answered the poll with ID ${pollAnswer.poll_id}`);
-
-                if (pollAnswer.poll_id === sentPoll.poll.id) {
-                    // Replace USER_ID with the ID of the user who answered the poll
-                    bot.sendMessage(message.from.id, 'Thanks for answering the poll!');
-                }
-            });
-        })
-        .catch((error) => {
-            console.error(`Failed to send poll: ${error}`);
-        });
-});
