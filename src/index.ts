@@ -5,6 +5,7 @@ import axios from 'axios';
 import *  as https from 'https';
 import { TextCommand, Button } from './interfaces/TextCommand';
 import { listenToUpgates } from './endpoints';
+import { randomIntFromInterval } from './utils/random';
 
 const bot = new TelegramBot(TELEGRAM_API_TOKEN, { polling: true });
 
@@ -58,14 +59,53 @@ const sync = async () => {
                 let sendMessage = async (chatId, userId) => {
                     await axios.get(`${API_URL}/api/User/tg?id=${userId}`, {
                         httpsAgent: httpsAgent
-                    }).then((result) => {
+                    }).then(async (result) => {
+
+
+                        for await (const image of command.images) {
+                            if (image != "") {
+                                await bot.sendPhoto(chatId, image)
+                                    .catch((error) => {
+                                        console.error('Error sending image');
+                                    });
+                            }
+                        }
+
+                        for await (const link of command.urls) {
+                            if (link != "")
+                                await bot.sendMessage(chatId, link);
+                        }
+
+                        let tempQuizes = command.quizes.sort(() => Math.random() - 0.5).slice(0, Math.min(command.quizesCount, command.quizes.length));
+
+                        for (let index = 0; index < tempQuizes.length; index++) {
+
+                            await bot.sendPoll(chatId, tempQuizes[index].text, tempQuizes[index].options,
+                                {
+                                    type: 'quiz',
+                                    is_anonymous: false,
+                                    correct_option_id: tempQuizes[index].rightOptionID - 1
+                                }
+                            );
+
+                        }
+
+
                         bot.sendMessage(chatId, command.text, {
                             reply_markup: keyboard,
                         });
 
                     }).catch((err) => {
-                        if (err.response.status == 404)
-                            bot.sendMessage(chatId, "Вы не авторизованы.");
+                        try {
+                            if (err.response.status == 404)
+                                bot.sendMessage(chatId, "Вы не авторизованы.");
+                            else
+                                console.log(err);
+                        } catch (error) {
+
+                            console.log(err);
+                        }
+
                     });
 
                 };
@@ -98,12 +138,23 @@ const sync = async () => {
             console.log(error);
         })
 
+
+    console.log("synced");
 };
+
+const resyncOnTimer = async () => {
+    setTimeout(() => {
+        sync();
+        resyncOnTimer();
+    },
+        5000);
+}
 
 let init = async () => {
     await sync();
 
     listenToUpgates(sync, bot);
+    resyncOnTimer();
 
     bot.setMyCommands([{
         command: '/menu',
@@ -117,7 +168,6 @@ let init = async () => {
 };
 
 init();
-
 
 
 
@@ -153,14 +203,14 @@ bot.onText(/\/info/, async (message) => {
 
 
 
-    bot.sendMessage(message.chat.id, `${message.from.id}`);
+    bot.sendMessage(message.chat.id, `User telegram id: ${message.from.id}`);
 
     await axios.get(`${API_URL}/api/User/tg?id=${message.from.id}`, {
         httpsAgent: httpsAgent
     }).then((res) => {
         console.log(res.data);
 
-        bot.sendMessage(message.chat.id, `${res.data['id']}`);
+        bot.sendMessage(message.chat.id, `User system id: ${res.data['id']}`);
 
     }).catch((err) => {
         console.log(err);

@@ -7,6 +7,7 @@ export interface TextCommand {
     urls:        string[];
     quizesCount: number;
     buttons:     Button[];
+    quizes:      Quiz[];
 }
 
 export interface Button {
@@ -15,3 +16,14 @@ export interface Button {
     key:  string;
     type: string;
 }
+
+export interface Quiz {
+    id:            string;
+    name:          string;
+    text:          string;
+    options:       string[];
+    rightOptionID: number;
+    textCommands:  null[];
+    steps:         any[];
+}
+

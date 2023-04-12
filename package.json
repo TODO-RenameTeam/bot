@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --exec ts-node src/index.ts",
     "sample_register": "nodemon --exec ts-node scripts/register_user.ts",
-    "user_delete": "nodemon --exec ts-node scripts/register_user.ts"
+    "user_delete": "nodemon --exec ts-node scripts/register_user.ts",
+    "fill_db": "nodemon --exec ts-node scripts/fill_main_content.ts"
   },
   "keywords": [],
   "author": "",
