@@ -411,7 +411,6 @@ bot.onText(/\/question/, async (message) => {
 bot.onText(/\/info/, async (message) => {
     console.log(message.chat.id);
 
-
     bot.sendMessage(message.chat.id, `User telegram id: ${message.from.id}`);
 
     await axios.get(`${API_URL}/api/User/tg?id=${message.from.id}`, {
@@ -419,7 +418,8 @@ bot.onText(/\/info/, async (message) => {
     }).then((res) => {
         console.log(res.data);
 
-        bot.sendMessage(message.chat.id, `User system id: ${res.data['id']}`);
+
+        bot.sendMessage(message.chat.id, `Ваша должность:${res.data.position.name}\nОписание:${res.data.position.description}`);
 
     }).catch((err) => {
         console.log(err);
