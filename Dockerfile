@@ -4,7 +4,6 @@ WORKDIR /bot
 
 COPY package*.json ./
 COPY tsconfig.json ./
-COPY src/utils/types.d.ts ./
 COPY src ./src
 RUN ls -a
 
