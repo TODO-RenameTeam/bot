@@ -220,9 +220,9 @@ bot.onText(/\/onboarding/, async (message) => {
         await axios.get(`${API_URL}/api/UserOnboarding/user/id/${user['id']}`, {
             httpsAgent: httpsAgent
         }).then(async (result) => {
-            let onbords: UserOnboarding[] = result.data;
+            let userOnbords: UserOnboarding[] = result.data;
 
-            if (onbords.length == 0) {
+            if (userOnbords.length == 0) {
                 console.log('em');
 
 
@@ -238,13 +238,40 @@ bot.onText(/\/onboarding/, async (message) => {
                     }, {
                         httpsAgent: httpsAgent
                     }).then(async (result) => {
-                        let roleOnb: RoleOnboarding = result.data;
+                        let command = roleOnb.steps[0];
 
-                        await axios.get(`${API_URL}/api/UserOnboarding/user/id/${user['id']}`, {
-                            httpsAgent: httpsAgent
-                        }).then(async (result) => {
-                            bot.sendMessage(message.from.id, "Вы начали онборбинг. Для перехода к следующему шагу введите команду еше раз.");
-                        });
+                        console.log(command);
+
+
+                        for await (const image of command.images) {
+                            if (image != "") {
+                                await bot.sendPhoto(message.from.id, image)
+                                    .catch((error) => {
+                                        console.error('Error sending image');
+                                    });
+                            }
+                        }
+
+                        for await (const link of command.urls) {
+                            if (link != "")
+                                await bot.sendMessage(message.from.id, link);
+                        }
+
+                        let tempQuizes = command.quizes.sort(() => Math.random() - 0.5).slice(0, Math.min(command.quizesCount, command.quizes.length));
+
+                        bot.sendMessage(message.from.id, command.text);
+
+                        for (let index = 0; index < tempQuizes.length; index++) {
+
+                            await bot.sendPoll(message.from.id, tempQuizes[index].text, tempQuizes[index].options,
+                                {
+                                    type: 'quiz',
+                                    is_anonymous: false,
+                                    correct_option_id: tempQuizes[index].rightOptionID - 1
+                                }
+                            );
+
+                        }
                     }).catch((err) => { });
                 }).catch((err) => { });
             } else {
@@ -252,48 +279,80 @@ bot.onText(/\/onboarding/, async (message) => {
                     httpsAgent: httpsAgent
                 }).then(async (result) => {
 
+
                     let onbord: RoleOnboarding = result.data;
 
-                    console.log(onbord);
+                    // console.log(onbord);
+
+                    let id = 0;
+
+                    for (let index = 0; index < onbord.steps.length; index++) {
+                        if (onbord.steps[index].id == userOnbords[0].userCurrentStepID) {
+                            console.log('id');
+                            id = index;
+                        }
+
+                    }
+
+                    if (id + 1 == onbord.steps.length) {
+                        bot.sendMessage(message.from.id, 'Вы уже прошли онбординг.');
+                    } else {
+                        let command = onbord.steps[id + 1];
 
 
-                    let command = onbord.steps.find((step, i, c) => step.id == onbords[0].userCurrentStepID);
+                        for await (const image of command.images) {
+                            if (image != "") {
+                                await bot.sendPhoto(message.from.id, image)
+                                    .catch((error) => {
+                                        console.error('Error sending image');
+                                    });
+                            }
+                        }
 
-                    console.log(command);
+                        for await (const link of command.urls) {
+                            if (link != "")
+                                await bot.sendMessage(message.from.id, link);
+                        }
+
+                        bot.sendMessage(message.from.id, command.text);
+
+                        let tempQuizes = command.quizes.sort(() => Math.random() - 0.5).slice(0, Math.min(command.quizesCount, command.quizes.length));
+
+                        for (let index = 0; index < tempQuizes.length; index++) {
+
+                            await bot.sendPoll(message.from.id, tempQuizes[index].text, tempQuizes[index].options,
+                                {
+                                    type: 'quiz',
+                                    is_anonymous: false,
+                                    correct_option_id: tempQuizes[index].rightOptionID - 1
+                                }
+                            );
+
+                        }
 
 
-                    for await (const image of command.images) {
-                        if (image != "") {
-                            await bot.sendPhoto(message.from.id, image)
-                                .catch((error) => {
-                                    console.error('Error sending image');
-                                });
+
+                        await axios.put(`${API_URL}/api/UserOnboarding?id=${userOnbords[0].id}`,
+                            {
+                                "userID": user.id,
+                                "roleOnboardingID": onbord.id,
+                                "userCurrentStepID": onbord.steps[id + 1].id
+                            },
+                            {
+                                httpsAgent: httpsAgent
+                            }).then((result) => {
+                                console.log('r');
+
+                            }).catch((err) => {
+                                console.log(err);
+
+                            });
+
+
+                        if (id + 2 == onbord.steps.length) {
+                            bot.sendMessage(message.from.id, 'Вы прошли онбординг.');
                         }
                     }
-
-                    for await (const link of command.urls) {
-                        if (link != "")
-                            await bot.sendMessage(message.from.id, link);
-                    }
-
-                    let tempQuizes = command.quizes.sort(() => Math.random() - 0.5).slice(0, Math.min(command.quizesCount, command.quizes.length));
-
-                    for (let index = 0; index < tempQuizes.length; index++) {
-
-                        await bot.sendPoll(message.from.id, tempQuizes[index].text, tempQuizes[index].options,
-                            {
-                                type: 'quiz',
-                                is_anonymous: false,
-                                correct_option_id: tempQuizes[index].rightOptionID - 1
-                            }
-                        );
-
-                    }
-
-
-                    bot.sendMessage(message.from.id, command.text);
-
-
                 });
             }
         }).catch((err) => { });
