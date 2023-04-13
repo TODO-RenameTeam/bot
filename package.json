@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./dist/index.js",
+    "build": "tsc",
     "start": "nodemon --exec ts-node src/index.ts",
     "sample_register": "nodemon --exec ts-node scripts/register_user.ts",
     "user_delete": "nodemon --exec ts-node scripts/register_user.ts",
