@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node ./dist/index.js",
     "build": "tsc",
-    "start": "nodemon --exec ts-node src/index.ts",
+    "nodemon": "nodemon",
     "sample_register": "nodemon --exec ts-node scripts/register_user.ts",
     "user_delete": "nodemon --exec ts-node scripts/register_user.ts",
     "fill_db": "nodemon --exec ts-node scripts/fill_main_content.ts"

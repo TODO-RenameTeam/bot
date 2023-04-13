@@ -1,4 +1,4 @@
-import { API_URL } from '../config'
+import { API_URL } from '../src/config'
 import axios from 'axios';
 import *  as https from 'https';
 

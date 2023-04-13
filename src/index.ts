@@ -1,6 +1,6 @@
 import TelegramBot, {InlineKeyboardButton, InlineKeyboardMarkup} from 'node-telegram-bot-api';
-import {TELEGRAM_API_TOKEN} from '../config';
-import {API_URL} from '../config';
+import {TELEGRAM_API_TOKEN} from './config';
+import {API_URL} from './config';
 import axios from 'axios';
 import *  as https from 'https';
 import {TextCommand, Button} from './interfaces/TextCommand';
