@@ -1,14 +1,20 @@
-import TelegramBot, { InlineKeyboardButton, InlineKeyboardMarkup } from 'node-telegram-bot-api';
-import { TELEGRAM_API_TOKEN } from '../config';
-import { API_URL } from '../config';
+import TelegramBot, {InlineKeyboardButton, InlineKeyboardMarkup} from 'node-telegram-bot-api';
+import {TELEGRAM_API_TOKEN} from '../config';
+import {API_URL} from '../config';
 import axios from 'axios';
 import *  as https from 'https';
-import { TextCommand, Button } from './interfaces/TextCommand';
-import { listenToUpgates } from './endpoints';
-import { randomIntFromInterval } from './utils/random';
-import { RoleOnboarding, User, UserOnboarding } from './interfaces/onboarding';
+import {TextCommand, Button} from './interfaces/TextCommand';
+import {listenToUpgates} from './endpoints';
+import {randomIntFromInterval} from './utils/random';
+import {RoleOnboarding, User, UserOnboarding} from './interfaces/onboarding';
 
-const bot = new TelegramBot(TELEGRAM_API_TOKEN, { polling: true });
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+import './api';
+
+export const bot = new TelegramBot(TELEGRAM_API_TOKEN, {polling: true});
 
 const httpsAgent = new https.Agent({
     rejectUnauthorized: false
@@ -145,9 +151,9 @@ const sync = async () => {
 
 const resyncOnTimer = async () => {
     setTimeout(() => {
-        sync();
-        resyncOnTimer();
-    },
+            sync();
+            resyncOnTimer();
+        },
         5000);
 }
 
@@ -177,7 +183,6 @@ let init = async () => {
 init();
 
 
-
 bot.on('message', async (message: TelegramBot.Message) => {
     await axios.get(`${API_URL}/api/User/tg?id=${message.from.id}`, {
         httpsAgent: httpsAgent
@@ -197,8 +202,7 @@ bot.on('message', async (message: TelegramBot.Message) => {
                         .catch((error) => {
                             bot.sendMessage(message.chat.id, "Код неверный либо вы прислали не код. Чтобы начать введите свой код.");
                         });
-                }
-                else {
+                } else {
                     bot.sendMessage(message.chat.id, "Чтобы начать введите свой код.");
                 }
             }
@@ -272,8 +276,10 @@ bot.onText(/\/onboarding/, async (message) => {
                             );
 
                         }
-                    }).catch((err) => { });
-                }).catch((err) => { });
+                    }).catch((err) => {
+                    });
+                }).catch((err) => {
+                });
             } else {
                 await axios.get(`${API_URL}/api/RoleOnboarding/position/${user.positionID}`, {
                     httpsAgent: httpsAgent
@@ -331,7 +337,6 @@ bot.onText(/\/onboarding/, async (message) => {
                         }
 
 
-
                         await axios.put(`${API_URL}/api/UserOnboarding?id=${userOnbords[0].id}`,
                             {
                                 "userID": user.id,
@@ -341,12 +346,12 @@ bot.onText(/\/onboarding/, async (message) => {
                             {
                                 httpsAgent: httpsAgent
                             }).then((result) => {
-                                console.log('r');
+                            console.log('r');
 
-                            }).catch((err) => {
-                                console.log(err);
+                        }).catch((err) => {
+                            console.log(err);
 
-                            });
+                        });
 
 
                         if (id + 2 == onbord.steps.length) {
@@ -355,15 +360,15 @@ bot.onText(/\/onboarding/, async (message) => {
                     }
                 });
             }
-        }).catch((err) => { });
-    }).catch((err) => { });
+        }).catch((err) => {
+        });
+    }).catch((err) => {
+    });
 });
-
 
 
 bot.onText(/\/question/, async (message) => {
     console.log(message.chat.id);
-
 
 
     bot.sendMessage(message.chat.id, `Введите вопрос.`);
@@ -399,15 +404,12 @@ bot.onText(/\/question/, async (message) => {
     };
 
 
-
     bot.on('message', callback);
 });
 
 
-
 bot.onText(/\/info/, async (message) => {
     console.log(message.chat.id);
-
 
 
     bot.sendMessage(message.chat.id, `User telegram id: ${message.from.id}`);

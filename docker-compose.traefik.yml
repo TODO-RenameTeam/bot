@@ -1,0 +1,26 @@
+version: '3'
+services:
+  kaboomdonatetg:
+    command: 'npm run start'
+    #    ports:
+    #     - "3000:3000"
+    build: ./
+    restart: 'on-failure'
+    networks:
+      - proxy
+    environment:
+      - PORT
+      - API_URL
+
+    # Traefik labels
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-secure.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-secure.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-secure.service=${COMPOSE_PROJECT_NAME}"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=${PORT}"
+
+networks:
+  proxy:
+    external: true

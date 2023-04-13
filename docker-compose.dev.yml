@@ -1,0 +1,12 @@
+version: '3'
+services:
+  kaboomdonatetg:
+    command: 'npm run start'
+    ports:
+      - ${PORT}:${PORT}
+    build: ./
+    restart: 'on-failure'
+    environment:
+      - NODE_ENV=development
+      - PORT
+      - API_URL
